@@ -1,6 +1,6 @@
 # Timeline — by availability window
 
-Last updated: Oct 17, 2026
+Last updated: Oct 29, 2026
 
 | Window | Dates | Load | Work |
 |---|---|---|---|
@@ -20,7 +20,7 @@ Split: ~35% effort in A, ~35% in C, ~15% C-tail, ~15% D.
 | Sat Oct 17 night / Mon Oct 19 | Order motor kits and USB camera (the ECE shop won't have them). Mon Oct 19: check the ECE shop, then place the Amazon and Digi-Key orders; buy fuse parts locally |
 | Oct 20 | Last day to order the cheap AliExpress 5 V module if I want to test it before the PCB order |
 | Oct 24 | Decide the 5 V module (and have the power connector settled) so PCB layout can start; CAD target done |
-| Oct 26 | Motor checkpoint: a motor turns under STM32 control, or switch to ESP32-S3. Screws ordered by this date |
+| Oct 26 | Motor checkpoint (the ESP32 fallback date was dropped on Oct 26). Bench tests of the S42C kits passed Oct 25-28; Nucleo driving a motor is still to do. Screws ordered by this date |
 | Oct 30 | **Target** PCB fab order + connectors/passives order |
 | Nov 1 | **Hard limit** for the PCB order (exams start Nov 2) |
 | Nov 10 | Order Pi 5 8 GB, power supply, cooler, microSD |

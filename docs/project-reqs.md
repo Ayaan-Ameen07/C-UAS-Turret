@@ -1,6 +1,6 @@
 # Counter-UAS Turret — Project requirements (Semester 1)
 
-Last updated: Oct 23, 2026
+Last updated: Oct 29, 2026
 The reasoning behind each choice is in `design-decisions.md`. Parts, links, prices
 and order dates are in `turret_bom.xlsx`.
 
@@ -11,9 +11,10 @@ lock-on indicator.
 ## Must have
 - Pan-tilt motors, controlled by a **custom PCB** (a carrier board that an
   STM32 Nucleo plugs into)
-- **Self-trained** neural network (not color-threshold-only): fine-tune a small
-  pretrained YOLO-nano class model on my own drone data. Resume wording: "fine-tuned
-  a pretrained model", not "built from scratch". Details are in "AI requirements".
+- **Self-trained** neural network (not color-threshold-only): a small YOLO-nano
+  class detector trained two ways (from scratch and fine-tuned from pretrained
+  weights) and benchmarked against each other. Resume wording must say which one
+  ships and how it was trained. Details are in "AI requirements".
 - Classical CV for fast tracking between AI checks (AI about 2-5 Hz, CV about
   30 Hz or more)
 - Laser activates only above a confidence threshold
@@ -39,8 +40,8 @@ lock-on indicator.
   training and the final build. Runs the neural net and decides "lock on".
   Coral accelerator is **optional and pinned** (decide at P2 after measuring the
   Pi alone).
-- **Motor brain:** **STM32G474** on a **Nucleo-G474RE** that plugs into my
-  custom carrier PCB. Sends step/direction pulses to two closed-loop motor
+- **Motor brain:** **STM32 Nucleo** (now the ECE-loan Nucleo-144 F746ZG;
+  the G474RE is an optional buy) that plugs into my custom carrier PCB. Sends step/direction pulses to two closed-loop motor
   kits, switches the laser, and the PCB handles power distribution.
 - **Motors:** two **BIGTREETECH S42C V1.1** closed-loop stepper kits (motor,
   driver and encoder in one), run at **12 V** (PCB parts rated for 24 V as an
@@ -57,9 +58,18 @@ lock-on indicator.
 ## AI requirements
 
 **Must have**
-- Detector: fine-tune a small pretrained YOLO-nano class model on my own drone data.
-- Dataset: collect and label it with the final Arducam, and split it by clip into
-  train, validation and test.
+- Two detectors, same small YOLO-nano class architecture, same data: (A) trained
+  from scratch with random starting weights (not pretrained), and (B) a pretrained
+  model fine-tuned on my data. Benchmark A against B on the same held-out test
+  clips and ship whichever scores better. The model must run on the Raspberry Pi 5
+  and train on my laptop (HP Victus, RTX GPU, Intel i5). Which exact model is still
+  being researched.
+- Starting data: use a public drone dataset (Kaggle) to train a first model and get
+  familiar with the pipeline. Check each dataset's license and spot-check its box
+  quality before using it.
+- Own data: collect and label footage in the PURT hangar with the final Arducam.
+  This is the test set (clips the model never trained on), and it is added to
+  training later. Split by clip into train, validation and test.
 - Evaluation: report precision, recall, mAP and false lock-ons on clips the model
   never saw.
 - Failure analysis: find at least one failure (such as backlight), add targeted
@@ -75,8 +85,6 @@ lock-on indicator.
 **Should have**
 - Data-size experiment: plot accuracy against dataset size.
 - Augmentation experiment: compare accuracy with and without augmentation.
-- Pretrained vs random start: train the same model both ways on the same data and
-  compare.
 - Coral decision: measure the Pi alone first, then decide on Nov 23.
 
 **Stretch goals**

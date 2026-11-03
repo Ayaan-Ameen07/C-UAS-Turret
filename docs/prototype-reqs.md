@@ -1,18 +1,20 @@
 # Prototype requirements
 
-Last updated: Oct 23, 2026
+Last updated: Oct 29, 2026
 
 ## Prototype 1 — Parts move, AI sees (Window A, Oct 16 – Nov 2)
 
 **Motor half**
-- [ ] Breadboard wiring: Nucleo-G474RE + two S42C closed-loop motor kits on a
+- [x] Bench tests done with lab supplies (see `s42c-bringup-tests.md`): pin map,
+      EN/STEP/DIR, laser switch
+- [ ] Breadboard wiring: Nucleo-144 F746ZG (ECE loan) + two S42C closed-loop motor kits on a
       12 V wall adapter (fuse, surge diode and 1000 uF capacitor on the supply)
-- [ ] First power-up on a bench supply at 12 V with about a 1 A current limit;
+- [x] First power-up on a bench supply at 12 V with about a 1 A current limit (done Oct 25);
       read the labels printed on the S42C boards (V1.1 pinout may differ from the
       V1.0 manual); test both kits on arrival (30-day free returns)
 - [ ] Send a command (e.g. `PAN:45,TILT:-10`), motors reach that angle
-- [ ] **Checkpoint Oct 26:** at least one motor turning under STM32 control. If
-      not, fall back to an ESP32-S3 (nothing else in the design changes)
+- [ ] **Checkpoint:** at least one motor turning under STM32 control (the Oct 26
+      ESP32 fallback date was dropped)
 - [ ] Power doesn't brown out under load
 
 **Vision half**
@@ -40,7 +42,7 @@ Last updated: Oct 23, 2026
 - [ ] Breadboard motor logic confirmed working (boxes above)
 - [ ] Power connector decided (**done**: barrel jack plus XT60 footprint) and the
       5 V module chosen (**by Oct 24**), so layout can start
-- [ ] Carrier board designed: Nucleo headers, motor and laser connectors,
+- [ ] Carrier board designed (Nucleo plugs in, with a header/wire option): Nucleo headers, motor and laser connectors,
       power entry (fuse first), surge diode, laser MOSFET, 5 V module socket,
       optional reverse-polarity protection
 - [ ] **Fab order target Oct 30, hard limit Nov 1** (exams start Nov 2), with

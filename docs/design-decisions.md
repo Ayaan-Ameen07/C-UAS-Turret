@@ -1,12 +1,15 @@
 # Design Decisions (plain-language version)
 
-Last updated: Oct 23, 2026
+Last updated: Oct 30, 2026
+
+The block diagram and a parts directory are in `pcb-flowchart.md`.
 
 This file explains **what we decided, why, and what is still open**.
 It is written so someone who has never built a robot can follow it.
 It adds to `project-reqs.md` and, where they differ, it is newer.
 (Example: `project-reqs.md` says the PCB talks to the Pi over "serial/I2C".
-We have now picked serial only.)
+We have now picked one USB cable from the Pi to the Nucleo, which carries power
+and serial together. See Decision 2.)
 
 The parts list with links, prices, and "decide by / order by" dates lives in the
 BOM spreadsheet (`turret_bom.xlsx`). This file is the reasoning behind it.
@@ -29,8 +32,8 @@ only does simple jobs, so it can be exact. The Pi does the thinking, the STM32
 does the moving.
 
 ```
- Camera --> [ Raspberry Pi 5 ] --serial wire--> [ STM32 on custom PCB ] --> 2 motor kits
-             runs the AI model                   exact motor timing         + laser
+ Camera --> [ Raspberry Pi 5 ] --USB cable--> [ STM32 Nucleo on custom PCB ] --> 2 motor kits
+ (USB)       runs the AI model                exact motor timing                + laser
              decides "lock on"
 ```
 
@@ -42,11 +45,22 @@ Prototype 1 stays in the finished turret.
 
 ---
 
-## Decision 1: The motor brain is an STM32G474 (not an ESP32)
+## Decision 1: The motor brain is an STM32 on a Nucleo (not an ESP32)
 
-**What:** STM32G474. For Prototype 1 we use the **Nucleo-G474RE** dev board
-(a ready-made board with the chip plus a USB programmer built in, about $20 at
-Digi-Key).
+**Updated Oct 29:** Prototype 1 runs on the **Nucleo-144 STM32F746ZG** that I
+borrowed from the Purdue ECE shop (a loan: it goes back). The **NUCLEO-G474RE**
+below is now only an optional buy, in case the shop wants its board back before
+Dec 12. The code is Arduino-style or ST's own tools, so it carries over between
+the two. The carrier PCB is designed so a Nucleo plugs in (see Decision 13).
+I dropped the Oct 26 ESP32 fallback date (I said not to track it).
+
+**Why I chose to use the loan board:** it was already in my hands and free, and
+the G474RE was only a hedge against an out-of-stock board. Using what I have lets
+me start on the code now.
+
+**What (original plan):** STM32G474. For Prototype 1 we planned the
+**Nucleo-G474RE** dev board (a ready-made board with the chip plus a USB
+programmer built in, about $20 at Digi-Key).
 
 **Updated Oct 17: carrier-board PCB.** The final custom PCB is a **carrier
 board that the Nucleo plugs into** (decided Oct 17), not a board with the bare
@@ -60,12 +74,25 @@ a chip-down board remain in the BOM as an **optional, not-counted** upgrade.
 **Resume wording:** say "custom carrier PCB for an STM32 Nucleo". Do not claim
 I designed my own microcontroller board.
 
-**Pi link option:** the Pi can talk to the Nucleo over one USB cable into its
-programmer port (it shows up as a serial port), instead of separate TX/RX/GND
-wires. Choose one when designing the board.
+**Pi link (decided Oct 30): one USB cable.** The Pi talks to the Nucleo over one
+USB cable into its programmer port (it shows up as a serial port). The same
+cable powers the Nucleo. There are no separate TX/RX/GND wires. See Decision 2.
 
 **One power rule:** the Nucleo and the carrier board must never both power the
-same pin. Pick a single power path when laying out the board.
+same pin. Decided Oct 30: the Nucleo gets power only from the Pi's USB cable, so
+the carrier board does not power it.
+
+**Chip-down PCB dropped (Oct 30):** putting the bare STM32 chip on my PCB in
+place of the Nucleo would cost about 8-15 more hours and fine-pitch soldering,
+and it will not fit before Nov 1. The carrier board stays.
+
+**Why I chose to drop it:** I do not want 8-15 more hours of fine-pitch
+soldering. The carrier board still has real design work in it.
+
+**Heads-up on the loan:** the loaned board is a Nucleo-144. The optional
+NUCLEO-G474RE in the BOM is a smaller Nucleo-64, so it will not plug into
+sockets made for the 144. If the shop wants the loan back before Dec 12, I need
+another 144-size board. To check in ST's documents.
 
 **Changed from the earlier plan:** this doc used to say STM32G431 / Nucleo-G431RB.
 That board is out of stock with a 99-week lead time, so we moved to the G474 in
@@ -105,22 +132,31 @@ board. I made the bare chip optional for now.
 
 ---
 
-## Decision 2: Pi and PCB talk over UART serial
+## Decision 2: The Pi and the Nucleo talk over one USB cable
 
-**What:** Two wires plus a ground wire (TX, RX, GND), at 3.3 V.
+**Updated Oct 30.** This used to say UART (TX, RX, GND wires at 3.3 V). It is now
+**one USB cable** from the Pi into the Nucleo's programmer USB port. The cable
+carries serial data and also powers the Nucleo.
 
-**Why:** The Pi only sends tiny messages like "aim here" or "fire". That does
-not need a fast or fancy connection. UART is the simplest option, works on
-every Pi and STM32, and is easy to debug with a laptop.
+**Why:** The Pi only sends tiny messages like "aim here" or "fire". A USB serial
+port is enough, and it is easy to debug with a laptop. One cable gives power and
+data, so the PCB needs no extra serial wires and no second power path for the
+Nucleo.
 
-**In Prototype 1** the laptop plays the Pi's role over USB serial.
+**In Prototype 1** the laptop plays the Pi's role with the same USB cable, so
+nothing changes when the Pi takes over.
 
-**Alternatives we rejected:** USB cable (needs extra USB circuitry on the PCB),
-I2C (motor electrical noise can corrupt it), SPI (overkill).
+**Alternatives we rejected:** UART wires (works, but needs wires and a separate
+power path), I2C (motor electrical noise can corrupt it), SPI (overkill).
 
-**Why I chose UART:** I wanted the simplest connection that works and is easy to
-debug. I was also confused at first about what the Pi does versus the laptop,
-which is why this doc explains training vs running.
+**To verify:** the Pi 5 may limit its USB ports to about 600 mA total unless told
+its supply is strong (`usb_max_current_enable=1` in `config.txt`). The Arducam
+plus the Nucleo may be near that. Check on the real Pi.
+
+**Why I chose USB over UART:** I wanted the simplest connection that works and is
+easy to debug. USB means one cable for power and data, and it matches Prototype 1.
+I was also confused at first about what the Pi does versus the laptop, which is
+why this doc explains training vs running.
 
 ---
 
@@ -165,18 +201,30 @@ sensor in one unit, so there is nothing to match up. The STM32 only sends simple
 step and direction pulses.
 
 **Why:** we want closed-loop (backlash was named as a top failure risk), and
-this is the cheapest hobby-grade closed-loop kit that arrives before our Oct 26
-check. Plain steppers plus separate drivers (about $50 for two axes) stay in the
+this is the cheapest hobby-grade closed-loop kit that arrives in time. Plain steppers plus separate drivers (about $50 for two axes) stay in the
 BOM only as a not-counted alternative; they are open-loop, which breaks the spec.
 
-**Honest unknowns:**
-- The Amazon page does not state the voltage. BTT's V1.0 manual rates the driver
-  at 1.65 A at 12 V. **First power-up is on a bench supply at 12 V with about a
-  1 A current limit.**
-- The pinout in the V1.0 manual may differ on V1.1. Read the labels printed on
-  the board.
-- Some reviewers report dead units. Amazon returns are free for 30 days, so test
-  both on arrival.
+**Bring-up results (Oct 25-28, measured on the bench):** both kits power up and
+calibrate. Full details and the pin table are in `s42c-bringup-tests.md`.
+
+| Fact | Measured / confirmed |
+|---|---|
+| Motor power (VM) | 12 V. Vendor page says 12-24 V. 24 mA idle, about 59 mA enabled and stepping with no load |
+| Enable (EN) | Active-low. Open = motor off, tied to GND = motor on. Open means "off" is a good fail-safe |
+| Step (STEP) | One step per rising edge, 3.3 V logic works. 100 Hz tested |
+| Direction (DIR) | Open = one way, tied to GND = the other way |
+| Microstep | Default 1/16: about 3,136 pulses per turn measured (3,200 expected), about 8.9 pulses per degree |
+| 6-pin control plug | Pin 1 VM, 2 NC (leave open), 3 GND, 4 EN, 5 STEP, 6 DIR |
+| Laser switch | IRLU024N, gate through 220 ohm, 10 kohm pulldown, laser draws 25 mA at 5 V. 3.3 V gate = on |
+
+**Still to measure:** both motors' current under load on the real 12 V adapter,
+100 back-and-forth moves, and the Nucleo driving STEP/DIR/EN.
+
+**Caution from the manual:** "do not turn the motor by hand after power on".
+
+**Honest unknowns (older notes, now mostly answered):**
+- Some reviewers report dead units. Amazon returns are free for 30 days; both of
+  my kits worked.
 
 **Why I chose these motors:**
 - Closed-loop was in the original spec because backlash (slop) and lost steps
@@ -212,10 +260,41 @@ after we test the board and trust it.
 **Noise note:** motors create electrical noise that can reset a Pi. The Pi's
 5 V path gets its own capacitors and short, thick traces to keep it clean.
 
+**Updated Oct 29: one 12 V input feeds everything ("Option 1").** There is a
+single power input. 12 V goes to the motors, and a buck converter (a switching
+step-down module) makes 5 V for the Pi. The laser uses a small 5 V line from the
+same converter. The other two ideas were: Option 2, the Pi on its own wall
+supply (works, but two cables and less "one product"), and Option 3, designing my
+own converter chip circuit (6-12 extra hours, not for this deadline). Parts that
+protect and clean the power are in Decision 12.
+
+**Why I chose Option 1:** I want one supply and some real power filtering so I
+learn it, and it reads best on a resume. Option 3 would eat time I need for the
+AI model and the CAD.
+
 **Still open: which 5 V module.** Option A is the Pololu D24V50F5 ($32.95, known
 good). Option B is a generic AliExpress 5 V / 5 A board ($5.24, unproven, and the
 "5 A" claim is doubtful). The two have different sizes, so this must be decided
-before the PCB layout is final. Revisit about Oct 24.
+before the PCB layout is final. I lean toward A (it is the one I can trust to run
+the Pi), but I have not confirmed it yet.
+
+**Option C checked Oct 30 (Amazon, sealed USB-C module, $8.99, 8-32 V in, "5 A").**
+It is a potted block with a USB-C output and no pins, so it cannot sit on the
+PCB. Reviews are mixed on whether it really delivers 5 A, and one says it is not
+suitable for a Pi 5. It would also need the `usb_max_current_enable=1` setting.
+Not a fit for a module that plugs into the board. Look for a bare module with pins
+or screw terminals, input range up to 24 V or more, and 5 A continuous.
+
+**Option D checked Oct 30 (Amazon, BINZET potted block with wire leads, 8-40 V in,
+5 V 5 A, about $9.78).** It has wires, not pins, so on the PCB it would go through
+screw terminals instead of a socket. The 5 A version shows delivery Nov 18 - Dec 13,
+which is too late for the order. The 10 A version (about $9.98) shows Oct 31.
+Reviews are mostly good, with a few saying it gives less current than rated.
+A possible backup, not a first choice. A screw-terminal footprint on the PCB would
+let me swap any module in later.
+
+**Pi, camera and Nucleo (Oct 30):** the 5 V rail feeds the Pi (and the laser). The
+Pi powers the Arducam and the Nucleo over USB. The Nucleo is not on the 5 V rail.
 
 **Why I chose to have the PCB power the Pi:** I asked which option is more
 time-efficient and looks cleaner and more professional. I also pointed out that
@@ -227,7 +306,25 @@ brand-new board should not ruin the checkpoint.
 
 ## Decision 6: Power input connector on the PCB (decided Oct 17)
 
-**What:** **Option D**: a barrel jack *and* an XT60 battery connector footprint
+**Updated Oct 30: the barrel jack is the main input.** My power source is a wall
+plug, so the board has a barrel jack. The XT60 footprint stays on the board but
+is **not populated** (empty pads) until a battery is built. A PCB-mount barrel jack
+needs to be bought (a few dollars). Match it to my adapter's plug size and
+polarity, and pick one rated for at least 5 A.
+
+**Why I chose the barrel jack:** my 12 V source is just a wall plug, and I want it
+to work like a USB charger: plug in and everything powers. The XT60 is a battery
+connector.
+
+**A battery needs more than an XT60 (to handle later):**
+- A battery pack with its own protection board (over/under voltage, over current).
+- A way to charge it, away from the turret.
+- Only one source connected at a time, with a label (or a power-switching part).
+- Voltage range: a 3-cell Li-ion pack sags below 12 V, and the S42C is rated 12-24 V.
+  A 4-cell pack (about 12-16.8 V) fits the motors, but then the SMCJ15A TVS would
+  be too low. It would need a higher-voltage TVS. To check before building a pack.
+
+**What (Oct 17 plan):** **Option D**: a barrel jack *and* an XT60 battery connector footprint
 on the same board. Only one is connected at a time.
 
 **Why:**
@@ -396,10 +493,76 @@ budget for China orders and for things I will only discover while building.
 
 ---
 
+## Decision 12: Power protection and filtering on the PCB (decided Oct 29)
+
+Goal: the board survives mistakes and motor noise, and I learn how real power
+boards do it. Parts in order, from the power input toward the loads:
+
+| Part | What it does (plain words) | Why it is there |
+|---|---|---|
+| Barrel jack (main) and XT60 pads (empty) | The jack takes the wall adapter. The XT60 footprint is for a battery later. | Matches my wall plug. See Decision 6. |
+| Fuse (5 A for P1, 15 A final) | A thin wire that melts if too much current flows | Stops a short from starting a fire |
+| Reverse-polarity protection | A diode or a P-type MOSFET that blocks power if + and - are swapped | A swapped plug would otherwise destroy the chips |
+| TVS diode (SMCJ15A) | Clamps sudden voltage spikes, like a pressure-relief valve | Motors and cables make spikes that can pass 15 V |
+| Bulk capacitor (100-1000 uF) | A small tank of charge close to the motor drivers | Motors pull current in bursts; the tank keeps the voltage steady |
+| Buck module (Pololu) | Efficiently turns 12 V into 5 V | The Pi needs 5 V at up to about 5 A |
+| Ferrite bead and small capacitors on the 5 V line | Block fast electrical noise from reaching the Pi | Motor noise can reset a Pi |
+
+**Why a buck and not a linear regulator:** a linear regulator burns the
+difference as heat: (12 V - 5 V) x current. At 3 A that is 21 W, which would melt
+it. A buck converter wastes only about 5-10 percent. A tiny linear regulator is
+fine for small jobs (the laser at 25 mA, or 3.3 V logic).
+
+**Reverse guard kept (Oct 30).** It is one part, either a diode or a P-channel
+MOSFET (not both). A plain diode drops about 0.6 V and would burn about 3 W at
+5 A, so I lean toward the MOSFET. Final pick in the calculations step.
+
+**What the TVS prevents:** voltage spikes. A motor coil pushes the voltage up
+whenever its current changes suddenly, and plugging in a live adapter can make the
+cable and capacitors "ring" above 12 V. The SMCJ15A does nothing below about 15 V
+and shorts a spike to ground above that. Exact numbers to confirm in the
+datasheet.
+
+**Why I chose this set:** I wanted the standard protection a real product uses,
+and I wanted to learn what each part does.
+
+**Why I kept the reverse guard:** I saw reversed rails on the bench while testing
+laser modules, and I don't want to repeat the same mistake. It protects the 12 V
+input, so a backwards supply cannot kill the board.
+
+---
+
+## Decision 13: How the Nucleo connects to the PCB (decided Oct 29)
+
+**What:** design the PCB so the Nucleo **plugs in** (sockets on the PCB that
+match the Nucleo's header pins). If that makes the board too big or awkward, the
+same signals also go to a plain header, so I can use wires between the Nucleo and
+the PCB instead.
+
+**Size (estimate, to check in KiCad):** the Nucleo-144 is about 5.25 x 2.75 in
+(133 x 70 mm; check ST's UM1974). A board it stacks on needs to be at least that
+big. A side-by-side board with wires could be about 3 x 4 in or smaller.
+
+**Power and data (Oct 30):** the Nucleo is powered by the USB cable from the Pi,
+which also carries serial data. The carrier board does not power the Nucleo. Its
+signals to the board (STEP, DIR, EN and the laser pin) are 3.3 V from the
+Nucleo's own regulator, so no voltage step-down is needed.
+
+**Why I chose "plug in, with a header and wires as a backup":** I want the
+finished turret to look clean, but a Nucleo is large and I do not want one
+choice to block the whole board. Both options use the same pins.
+
+---
+
 ## Still open (not decided)
 
-1. **5 V module for the Pi:** Pololu vs AliExpress. Revisit about Oct 24, and it
-   must be settled before the PCB layout starts. Target: connector and 5 V module settled by Oct 24, board design finished and ordered Oct 30.
+1. **5 V module for the Pi:** Pololu vs AliExpress (the sealed Amazon USB-C module
+   is ruled out, see Decision 5). Lean toward Pololu, not confirmed. It must be
+   settled before the PCB layout is final. Target: board design finished and
+   ordered Oct 30, hard limit Nov 1.
+   - **Reverse guard part:** diode or P-MOSFET (calculations step).
+   - **Barrel jack part:** match my adapter's plug size and polarity.
+   - **Pi 5 USB power limit** with the camera and Nucleo on USB.
 2. **YOLO fine-tune vs from-scratch network.** Parked for now. Note the project
    rule says "self-trained, not pretrained". Fine-tuning a small YOLO on our own
    photos is the practical route; training a tiny network from scratch is a

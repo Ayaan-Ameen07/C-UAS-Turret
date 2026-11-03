@@ -10,4 +10,5 @@ Docs (in `docs/`):
 - `prototype-reqs.md` — checklists for Prototypes 1, 2 and 3
 - `gantt.md` — timeline by availability window and key dates
 - `design-decisions.md` — every design decision and why I made it
+- `s42c-bringup-tests.md` — bench test results and the pin/voltage table for the PCB
 - `turret_bom.xlsx` — parts list with links, prices, and decide-by / order-by dates
