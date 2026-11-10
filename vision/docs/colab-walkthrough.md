@@ -1,298 +1,239 @@
-﻿# Training on Google Colab — a detailed, learn-as-you-go walkthrough
+﻿# Training on Google Colab — write the training yourself (learn-as-you-go)
 
-This is a teaching guide, not just a list of commands. Each step says WHAT to
-run, WHY it exists, and WHAT you should see. Follow it top to bottom in a single
-Colab session. If you just want the terse version, see `gpu-training.md`.
+This is a teaching guide where **you write the training code**, not a wrapper.
+Data prep (download/split/assemble) stays as reusable script calls — no point
+hand-retyping a 900 MB download — but the TRAINING itself you type cell by cell
+using the Ultralytics Python API, so you see and control every piece: loading
+the model, configuring the run, driving it, and reading the results.
 
-## What Colab is (and why we use it)
+Note on levels: here you drive training with the Ultralytics API (`model.train`).
+Ultralytics still runs the low-level loop (forward/loss/backprop/optimizer step)
+inside that call — that is how ~all real YOLO work is done; nobody rewrites
+YOLO's internals. If you later want to hand-write the raw forward/backward/step
+loop and literally type the lines that change the weights, that is a separate
+module on a simpler model (see the "Going deeper" note at the end).
 
-Google Colab is a free Jupyter notebook that runs on Google's machines in your
-browser. The important part for us: it can give you a **GPU** for free. Training
-a neural net means adjusting ~2.6M model weights over many passes — heavy math
-that a GPU does 10-50x faster than a laptop CPU. Our Pavilion only has a CPU, so
-instead of installing GPU drivers anywhere, we borrow Google's GPU for an hour.
+## How a Colab notebook works
 
-A notebook is a list of **cells**. You type code in a cell and press Shift+Enter
-to run it. Output appears right below the cell. A `!` at the start of a line
-means "run this as a terminal command" instead of as Python. Cells share state,
-so something set up in an early cell is still there in a later one.
-
-Mental model for the whole session: Colab hands you a blank GPU computer. We
-teach it our project (clone the code), give it the tools (install), give it the
-data (reproduce the import), train, then grab the result before the machine is
-taken away.
-
----
-
-## Step 0 — Open a notebook and turn on the GPU
-
-1. Go to https://colab.research.google.com and sign in with a Google account.
-2. File -> New notebook.
-3. **This is the step people forget:** Runtime -> Change runtime type ->
-   Hardware accelerator -> **GPU** -> Save. Without this you get a CPU machine
-   and training crawls.
-
-Why it matters: the GPU is the entire reason we are here. If you skip this, every
-later step still "works" but training takes hours instead of minutes.
+Colab is a free browser notebook that can give you a **GPU**. Training adjusts
+~2.6M model weights over many passes — heavy math a GPU does 10-50x faster than
+a CPU. A notebook is a list of **cells**; type code, press Shift+Enter to run,
+output appears below. A line starting with `!` runs as a terminal command; `%`
+is a notebook "magic"; everything else is Python. Cells share state, so a
+variable from an earlier cell is still alive in a later one.
 
 ---
 
-## Step 1 — Confirm you actually got a GPU
+## Step 0 — New notebook, GPU on
 
-In the first cell, run:
+1. https://colab.research.google.com -> sign in -> File -> New notebook.
+2. Runtime -> Change runtime type -> Hardware accelerator -> **GPU** -> Save.
+   (Skip this and everything runs, but on a slow CPU.)
+
+## Step 1 — Confirm the GPU (cell)
 
 ```python
 !nvidia-smi
 ```
+Expect a table naming a GPU (often a T4). Error/"not found" => redo Step 0.
+Verify the foundation before building on it.
 
-Press Shift+Enter.
-
-What this does: `nvidia-smi` is NVIDIA's "show me the GPU" tool. It prints a
-table.
-
-What you should see: a table naming a GPU (often a Tesla T4 on free Colab) and a
-CUDA version in the top-right. If instead you get "command not found" or an
-error, the runtime is not on GPU — go back to Step 0.
-
-Why we check first: it is much nicer to catch "no GPU" now than to wonder later
-why training is slow. Verify the foundation before building on it.
-
----
-
-## Step 2 — Get our code onto the machine
+## Step 2 — Get the code (cell)
 
 ```python
 !git clone https://github.com/Ayaan-Ameen07/C-UAS-Turret.git
 %cd C-UAS-Turret/vision
 ```
+`git clone` pulls our repo from GitHub. `%cd` (with `%`, not `!`) changes the
+directory for ALL later cells — `!cd` would only last inside one cell. Our
+scripts expect to run from `vision/`. Confirm with `!ls`.
 
-What this does, line by line:
-- `git clone ...` copies our whole repository from GitHub onto the Colab
-  machine. This is why we committed and pushed everything first — Colab pulls a
-  fresh copy of exactly what is on GitHub.
-- `%cd C-UAS-Turret/vision` changes into the `vision/` folder. Note the `%`, not
-  `!`: `%cd` is a notebook "magic" that changes the directory **for all later
-  cells**. A `!cd` would only change it inside that one cell and then forget —
-  a classic beginner trap. We use `%cd` so every later command runs from inside
-  `vision/`, which is where all our scripts expect to be.
-
-What you should see: clone progress, then the prompt sitting in
-`.../C-UAS-Turret/vision`. You can confirm with `!ls` — you should see
-`import_dataset.py`, `configs/`, `src/`, etc.
-
----
-
-## Step 3 — Install the tools
+## Step 3 — Install tools + verify GPU torch (cells)
 
 ```python
 !pip install ultralytics huggingface_hub
 ```
-
-What this does: installs the two libraries our code needs that are not already
-on Colab:
-- `ultralytics` — the YOLO training/inference engine (it pulls in torch too).
-- `huggingface_hub` — how `import_dataset.py` downloads the public dataset.
-
-Why we do NOT install the full `requirements.txt` here: Colab already ships a
-**GPU build of PyTorch**. If we blindly reinstalled torch from our requirements,
-we might replace Colab's GPU torch with a CPU one and lose the whole point. So on
-Colab we only add what is missing and leave Colab's torch alone. (On a local GPU
-machine like the Victus the story is different — there you install GPU torch
-yourself. That is in `gpu-training.md`.)
-
-What you should see: a lot of "Collecting... Installing..." lines ending without
-errors. A few dependency warnings in yellow are normal.
-
-### Confirm torch still sees the GPU
+Only the two libraries Colab lacks. We do NOT reinstall `requirements.txt`
+because Colab already ships a **GPU** build of torch and we must not replace it
+with a CPU one.
 
 ```python
 import torch
 print("CUDA available:", torch.cuda.is_available())
 print("GPU:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none")
 ```
+**Must print `True`.** This is the one check that fails SILENTLY if wrong —
+training would run on CPU with no error, just 10-50x slower. `False` => Runtime
+-> Disconnect and delete runtime, start over.
 
-What you should see: `CUDA available: True` and a GPU name. This is the single
-most important check in the whole guide. `True` means training will use the GPU.
-If it says `False`, stop — something replaced the GPU torch, and training would
-silently run on CPU. (Fix: Runtime -> Disconnect and delete runtime, then start
-over from Step 0.)
-
-Why this matters so much: everything downstream "works" either way, so a wrong
-answer here does not throw an error — it just makes training 10-50x slower
-without telling you. Always verify.
-
----
-
-## Step 4 — Reproduce the dataset
+## Step 4 — Reproduce the dataset (cell; reusable scripts)
 
 ```python
 !python import_dataset.py --n 600 --seed 42
 !python -m src.vision.split
 !python -m src.vision.dataset
 ```
+- `import_dataset.py --n 600 --seed 42` — downloads the public Seraphim drone
+  set, takes the SAME reproducible 600 images (seed fixes it), lands them in
+  `data/frames` + `data/labels`.
+- `split.py` — divides into train/val/test **by clip** (no leakage). Each public
+  image is its own one-frame clip.
+- `dataset.py` — copies into YOLO's expected `train/val/test` + `images/labels`
+  layout and writes `dataset.yaml` (tells YOLO where data is; one class `drone`).
 
-What each line does:
-- `import_dataset.py --n 600 --seed 42` downloads the public Seraphim drone
-  dataset from Hugging Face, takes a reproducible 600-image sample, and lands the
-  images in `data/frames/` and their labels in `data/labels/`. The `--seed 42`
-  is what makes it the SAME 600 images every time, on any machine — so your run
-  matches the Pavilion run and is comparable.
-- `split.py` divides those 600 into train/val/test. It splits **by clip** to
-  avoid leakage (frames from one source cannot land in both train and test). For
-  this public data each image is its own one-frame clip, so it is a clean split.
-- `dataset.py` copies the split into the folder layout YOLO expects
-  (`data/dataset/train/images`, `.../labels`, and same for val/test) and writes
-  `dataset.yaml`, the file that tells YOLO where everything is and that there is
-  one class, `drone`.
-
-What you should see: a ~905 MB download (takes a minute or two), then
-"Imported 600 image/label pairs", then a split summary like
-`train 420 / val 120 / test 60`, then "Wrote .../dataset.yaml".
-
-Want more data? Raise `--n` (e.g. `--n 4000`). More images generally helps, but
-this public data has unverified labels and mixes real/marketing/synthetic
-images, so returns diminish. 600 is plenty to learn the flow. The model that
-actually ships must be trained on our OWN Arducam footage — this is practice.
+These are project tooling, kept as scripts on purpose. Raise `--n` for more data.
 
 ---
 
-## Step 5 — Train (the real run)
+# The training — YOU write these cells
+
+From here you type the training using the Ultralytics Python API. Run each cell
+and read its output; the comments explain what each line does.
+
+## Step 5 — Load the model
 
 ```python
-!python -m src.vision.train
+from ultralytics import YOLO
+
+# Load yolo11n with PRETRAINED weights (the .pt). "nano" = smallest YOLO11,
+# ~2.6M weights: small and fast enough to run on the Pi later. Pretrained means
+# the weights already learned general vision (edges/shapes/objectness) on a big
+# dataset, so we only have to teach the ONE new concept: "drone".
+model = YOLO("yolo11n.pt")
+
+# Peek at the model. (Optional, but good to see what you loaded.)
+print(type(model))
+print("task:", model.task)        # -> 'detect'
 ```
 
-This uses the full settings in `configs/drone.yaml`: start from pretrained
-`yolo11n.pt`, 80 epochs, 960px images, batch 16, with early-stopping patience 20.
+Why load from `.pt` and not `.yaml`: `.pt` = pretrained weights (fine-tuning
+start); `.yaml` = same architecture but RANDOM weights (from-scratch). We start
+pretrained because with only a few hundred images, starting from random would
+learn far worse. (You will run the random version yourself in Step 9.)
 
-### What is actually happening while it runs
-
-Training repeats a loop over the data. One pass over all 600 images is one
-**epoch**; we do up to 80. Within each epoch, for each batch of images:
-
-1. **Forward pass:** push the images through the network; it predicts boxes +
-   drone-confidence. Early on, mostly wrong.
-2. **Loss:** compare predictions to the true labels; get one number for "how
-   wrong." You will see three parts scroll by: `box_loss` (box position),
-   `cls_loss` (is it a drone?), `dfl_loss` (box-edge sharpness).
-3. **Backpropagation:** calculus works out, for each of the ~2.6M weights,
-   which direction would lower the loss (the "gradient").
-4. **Optimizer step:** nudge every weight a small amount in that direction. The
-   step size is the learning rate.
-
-Repeat, and the loss trends down while accuracy on the validation set trends up.
-Because we START from pretrained weights (the model already knows generic
-vision), we are only teaching it the one new concept "drone" — which is why a few
-hundred images is enough. Early-stopping ("patience 20") halts if validation
-stops improving, so it will not grind all 80 epochs pointlessly or overfit.
-
-### What you should see
-
-A header line naming the device — it should say your GPU, NOT "CPU". Then a
-per-epoch table with the three losses and, after validation, columns `P`
-(precision), `R` (recall), `mAP50`, `mAP50-95`. Watch mAP50 climb over epochs.
-On a free T4, this run is minutes, not hours. When it ends it prints where the
-weights were saved and strips the optimizer from `best.pt`.
-
-- **mAP50** — the headline accuracy (higher is better, 0-1).
-- **precision** — of the things it called drones, how many were drones (high =
-  few false alarms; important for us, since a false laser fire is worse than a
-  miss).
-- **recall** — of the real drones, how many it found.
-
-If you hit an out-of-memory error, lower the batch size:
-`!python -m src.vision.train --batch 8`.
-
----
-
-## Step 6 — Evaluate on the held-out test set
+## Step 6 — Kick off training and understand the knobs
 
 ```python
-!python -m src.vision.evaluate
+# model.train runs the actual loop internally (forward -> loss -> backprop ->
+# optimizer step), once per batch, for each epoch. YOU set the knobs here.
+results = model.train(
+    data="data/dataset/dataset.yaml",  # where the train/val data + class names are
+    epochs=80,       # how many full passes over the 600 images. More = more
+                     # refining, up to a point. Too many risks overfitting.
+    imgsz=960,       # input image size. Bigger helps SMALL objects (drones are
+                     # small/far) but is slower + uses more GPU memory.
+    batch=16,        # images processed together per step. Bigger = steadier
+                     # gradients but more memory. Lower this if you hit OOM.
+    patience=20,     # EARLY STOPPING: if val stops improving for 20 epochs,
+                     # stop. Prevents wasted epochs and curbs overfitting.
+    project="experiments/runs",  # where outputs/weights are saved
+    name="train_api",            # subfolder name for this run
+)
 ```
 
-What this does: measures the trained model on the TEST split — images it never
-saw during training. This is the honest score; training/val numbers always look
-rosier than reality. It also saves prediction images you can open to SEE the
-mistakes.
+While it runs, read the per-epoch table. These are the loop's own numbers:
+- `box_loss` — how off the box positions are.
+- `cls_loss` — how wrong about "is this a drone".
+- `dfl_loss` — a term that sharpens box edges.
+All three should trend DOWN. After each epoch it validates and prints `P`
+(precision), `R` (recall), `mAP50`, `mAP50-95` — these should trend UP. The
+header line names the device; it must be your GPU, not CPU. On a T4 this is
+minutes.
 
-Why the test set is sacred: if you tune your model by peeking at the test set,
-the test score stops meaning anything. We split it off at the start and only look
-now, once, at the end. This is the difference between a real metric and fooling
-yourself.
+What "training" means here, concretely, each step: push a batch through (forward
+pass) -> compare predictions to the true boxes to get a loss -> backprop
+computes, for all ~2.6M weights, which way to nudge each to lower the loss ->
+the optimizer nudges them. Repeat. That is literally how the weights change;
+`model.train` is running that loop for you.
 
-What you should see: a `=== TEST metrics ===` block with mAP50, precision,
-recall. Write these down (see Step 8).
+If you get a CUDA out-of-memory error, re-run Step 6 with `batch=8` (or `4`).
 
----
+## Step 7 — Inspect what you just trained (read the results object)
 
-## Step 7 — Download the trained model to your computer
+```python
+# model.train returned a results object; the best checkpoint path is here:
+print("Saved to:", results.save_dir)
+
+# Where the weights live:
+import glob
+weights = sorted(glob.glob(f"{results.save_dir}/weights/*.pt"))
+print("weights files:", weights)   # expect best.pt and last.pt
+```
+`best.pt` = the epoch that scored best on validation (what you keep). `last.pt` =
+the final epoch. You are reading the output yourself instead of a script telling
+you — this is the habit that builds real understanding.
+
+## Step 8 — Evaluate honestly on the TEST set
+
+```python
+# Load the best weights and measure on the HELD-OUT test split (never seen in
+# training). This is the honest number; train/val always look rosier.
+best = YOLO(f"{results.save_dir}/weights/best.pt")
+metrics = best.val(data="data/dataset/dataset.yaml", split="test")
+
+print("mAP50:   ", round(metrics.box.map50, 3))
+print("mAP50-95:", round(metrics.box.map, 3))
+print("precision:", round(metrics.box.mp, 3))
+print("recall:   ", round(metrics.box.mr, 3))
+```
+Why a separate test set: if you tune by peeking at test, the score stops meaning
+anything. We split it off up front and look once, here. For a laser turret,
+watch **precision** — a false fire (shooting a bird) is worse than a miss.
+
+## Step 9 — The required experiment: from-scratch vs pretrained
+
+You trained pretrained in Step 6. Now train the SAME architecture from RANDOM
+weights and compare — this is a project requirement.
+
+```python
+# .yaml instead of .pt = same yolo11n architecture, RANDOM initial weights.
+scratch = YOLO("yolo11n.yaml")
+scratch.train(
+    data="data/dataset/dataset.yaml",
+    epochs=80, imgsz=960, batch=16, patience=20,
+    project="experiments/runs", name="train_scratch",
+)
+scratch_metrics = scratch.val(data="data/dataset/dataset.yaml", split="test")
+print("FROM-SCRATCH mAP50:", round(scratch_metrics.box.map50, 3))
+```
+With only 600 images, from-scratch should score clearly WORSE than pretrained.
+Demonstrating that gap IS the experiment — it shows why transfer learning
+matters when data is limited. Log BOTH test numbers.
+
+## Step 10 — Download your model (do NOT skip)
 
 ```python
 from google.colab import files
-import glob
-best = sorted(glob.glob("experiments/runs/**/weights/best.pt", recursive=True))[-1]
-print("Downloading:", best)
-files.download(best)
+files.download(f"{results.save_dir}/weights/best.pt")
 ```
-
-What this does: finds the best checkpoint (`best.pt`, the epoch that scored
-highest on validation — about 5-6 MB, the ~2.6M trained numbers) and downloads
-it to your laptop.
-
-**Why this step is not optional:** Colab is temporary. When the session ends (you
-close it, or it times out after idle), **the entire machine is wiped** — code,
-data, and your trained model, all gone. The only thing that survives is what you
-download. So grab `best.pt` before you walk away.
-
-On the Pavilion later, point the tools at it:
+Colab wipes the whole machine when the session ends — code, data, model. The
+downloaded `best.pt` (~5-6 MB, your ~2.6M trained weights) is the ONLY thing that
+survives. On the Pavilion:
 ```bash
 python -m src.vision.evaluate --weights path\to\best.pt
 python -m src.vision.live_detect --weights path\to\best.pt
 ```
 
----
+## Step 11 — Log the run (required; this is how you learn)
 
-## Step 8 — Record the run (required, and this is how you learn)
-
-Open `experiments/log.md` in the repo and add an entry: the date, that it was
-600 images seed 42, the settings (yolo11n.pt, 80 epochs, 960px), and the TEST
-mAP50 / precision / recall from Step 6. Note anything the failure images in Step
-6 had in common (all backlit? all tiny drones?).
-
-Why: patterns only show up when you can compare runs. This log is required by the
-project's AI requirements, and the "look at failures -> collect targeted data ->
-retrain -> compare" loop is the actual machine-learning skill, more than any
-single number.
+In `experiments/log.md` record: date; 600 images, seed 42; settings (yolo11n,
+80 epochs, 960px, batch 16); TEST mAP50/precision/recall for BOTH the pretrained
+and from-scratch runs; and anything the failure images had in common. Patterns
+only appear across logged runs — this is the real ML skill.
 
 ---
 
-## Optional — the required from-scratch vs pretrained experiment
+## Reminders
 
-The project requires training the same architecture two ways and comparing. You
-already did the pretrained one (Step 5). Now run the from-scratch one:
+- This is PUBLIC data — a stepping stone. The shipped model must train on our
+  OWN Arducam footage, with that footage as the held-out test set.
+- `model.train`/`model.val` are the Ultralytics API; you are driving them and
+  reading their outputs, which is how real YOLO work is done.
 
-```python
-!python -m src.vision.train --from-scratch
-!python -m src.vision.evaluate
-```
+## Going deeper (optional, later)
 
-`--from-scratch` starts the SAME network from RANDOM weights instead of
-pretrained ones, so it has to learn to see from zero. With only 600 images it
-will score clearly worse — and showing that gap IS the experiment. Log both runs
-and compare. This demonstrates why transfer learning (starting from pretrained
-weights) matters when data is limited.
-
----
-
-## If something goes wrong
-
-- **Training says "CPU", or Step 3's check printed `False`:** the GPU torch got
-  replaced or the runtime is not GPU. Runtime -> Disconnect and delete runtime,
-  then redo from Step 0.
-- **"No such file" / scripts not found:** you are not in `vision/`. Re-run the
-  `%cd C-UAS-Turret/vision` cell (Step 2). Confirm with `!ls`.
-- **Out of memory during training:** add `--batch 8` (or `--batch 4`).
-- **Session disconnected mid-run:** free Colab has time limits. Just start over;
-  the data reproduces from the same seed. For long runs, do import + train in one
-  sitting and download `best.pt` promptly.
+If you want to hand-write the raw forward/loss/`backward()`/`optimizer.step()`
+loop and literally type the lines that update the weights, that is best done on a
+small CNN classifier (YOLO's loss/label-assignment is too complex to hand-roll
+usefully). It also maps to this project's classifier stretch goal. Ask for the
+"Level 2 raw-PyTorch loop" module when you want it.
