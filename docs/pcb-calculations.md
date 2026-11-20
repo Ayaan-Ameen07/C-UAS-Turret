@@ -91,6 +91,14 @@ At 12 V the zener does nothing, so the MOSFET still gets the full -12 V.
 
 **Result:** use **SMCJ15CA**, the two-way (bidirectional) version of SMCJ15A with the same 15 V standoff and 24.4 V clamp. I chose it because it works either way round, so it cannot be soldered backwards.
 
+
+**Update Nov 19 (battery option): use SMCJ18CA instead.** A 4S LiPo reaches
+16.8 V full, which is above SMCJ15CA's ~16.7 V breakdown, so the 15 V part
+would conduct and overheat. SMCJ18CA (18 V standoff, about 29 V clamp, same
+SMC footprint) stays off up to 18 V. Trade-off: in a big spike the clamp is a
+little above the S42C's 24 V rating; the Pololu (38 V max) is fine. The 15 V
+gate zener still works at 16.8 V: it leaks only about 18 uA through the 100k.
+
 ## 5. Bulk capacitor
 
 **Result:** one **1000 uF, 35 V** electrolytic on the +12V rail. 35 V because
