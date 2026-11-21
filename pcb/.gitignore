@@ -2,3 +2,6 @@
 *.lck
 fp-info-cache
 *.kicad_prl
+temp-freerouting.dsn
+*.ses
+*.rpt
