@@ -2572,7 +2572,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "Green"
+		(property "Value" "Red"
 			(at 222.25 98.1074 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2980,7 +2980,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "SMCJ15CA"
+		(property "Value" "SMCJ18CA"
 			(at 171.45 95.2499 90)
 			(show_name no)
 			(do_not_autoplace no)
