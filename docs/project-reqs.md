@@ -26,8 +26,8 @@ lock-on indicator.
 - Anything aimed at people
 
 ## Budget
-- Original target: about $370 (Tier 2). **No longer binding**: a friend may help
-  fund the build in exchange for a resume credit (role split still to be agreed).
+- **Budget: about $500** (updated Nov 12, 2026; the original ~$370 target is retired).
+  A friend may help fund the build in exchange for a resume credit (role split still to be agreed).
 - Current BOM (counted rows, incl. $80 shipping/tax/China/unknowns allowances):
   **about $530** without optional items, **about $722** with the optional
   battery set and Coral.
@@ -40,7 +40,7 @@ lock-on indicator.
   training and the final build. Runs the neural net and decides "lock on".
   Coral accelerator is **optional and pinned** (decide at P2 after measuring the
   Pi alone).
-- **Motor brain:** **STM32 Nucleo** (now the ECE-loan Nucleo-144 F746ZG;
+- **Motor brain:** **STM32 Nucleo** (now the ECE-loan Nucleo-144 F767ZI;
   the G474RE is an optional buy) that plugs into my custom carrier PCB. Sends step/direction pulses to two closed-loop motor
   kits, switches the laser, and the PCB handles power distribution.
 - **Motors:** two **BIGTREETECH S42C V1.1** closed-loop stepper kits (motor,

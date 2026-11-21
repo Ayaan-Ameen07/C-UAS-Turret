@@ -7,7 +7,7 @@ Last updated: Oct 29, 2026
 **Motor half**
 - [x] Bench tests done with lab supplies (see `s42c-bringup-tests.md`): pin map,
       EN/STEP/DIR, laser switch
-- [ ] Breadboard wiring: Nucleo-144 F746ZG (ECE loan) + two S42C closed-loop motor kits on a
+- [ ] Breadboard wiring: Nucleo-144 F767ZI (ECE loan) + two S42C closed-loop motor kits on a
       12 V wall adapter (fuse, surge diode and 1000 uF capacitor on the supply)
 - [x] First power-up on a bench supply at 12 V with about a 1 A current limit (done Oct 25);
       read the labels printed on the S42C boards (V1.1 pinout may differ from the

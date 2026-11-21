@@ -25,7 +25,7 @@ Never apply power from the printed labels. Use the confirmed hole map in test 1d
 | Keysight EDU36311A supply | Motor power (channel 2 or 3, current limited) |
 | Keysight EDU33212A function generator | Step pulses (test 3) |
 | Scope | Signal check |
-| ECE-loan Nucleo-144 STM32F746ZG | Step/Dir/Enable source (test 5) |
+| ECE-loan Nucleo-144 STM32F767ZI | Step/Dir/Enable source (test 5) |
 | 2x BIGTREETECH S42C V1.1 kits | Closed-loop motor + driver |
 
 ## What the manual confirms
