@@ -1,5 +1,8 @@
 # C-UAS Turret carrier PCB: parts selection
 
+> **Update Nov 22, 2026:** some rows below are older than the final order (Q1, D2, LEDs, C1). See `docs/pcb-order-status.md` for what was actually ordered.
+
+
 Branch `pcb-parts`, made from `docs/design-decisions` at 98e0ee4 ("Add PCB schematic: 4 pages, ERC clean").
 KiCad 10.0.6. 2-layer, 1 oz, JLCPCB. Worst case 5.62 A at 12 V (7.0 A with margin).
 Work done unattended overnight, 2026-11-11 (all times UTC).
