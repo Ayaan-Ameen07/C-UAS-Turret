@@ -17,7 +17,7 @@ calipers before printing. Last updated Nov 25, 2026.
 
 | Part | Qty | Key sizes | Source | Status |
 |---|---|---|---|---|
-| Arducam 1080p HDR autofocus USB camera, metal case (Amazon B0FX47YSJQ) | 1 | Lens 78° (D). USB 2.0 UVC. 1 m USB to JST cable. | Arducam front drawing (below). No CAD file. | Case front 36 x 36 (44 tall with the U bracket; bracket removed for the head). Raised square 24 x 24 x 2, lens ring Ø14 x 0.75 on top, lens centered. **MEASURE:** case depth (front to back). |
+| Arducam 1080p HDR autofocus USB camera, metal case (Amazon B0FX47YSJQ) | 1 | Lens 78° (D). USB 2.0 UVC. 1 m USB to JST cable. | Arducam front drawing (below). No CAD file. | Case front 36 x 36 (44 tall with the U bracket; bracket removed for the head). Raised square 24 x 24 x 2, lens ring Ø14 x 0.75 on top, lens centered. Case depth 10, ~13 total with the raised square + lens ring (Aru, ruler, Nov 25). |
 | 5 V red laser dot module, 650 nm | 1 (+ spares) | Brass body Ø6 x 14 long, ~90 overall with leads. Red = +5 V, blue = −. <20 mA (measured 25 mA at 5 V). | Listing photos below | The head holds it in a printed sleeve (inner Ø6.2), so a different laser = print a new sleeve |
 
 ![Arducam front](images/arducam-front.png)
