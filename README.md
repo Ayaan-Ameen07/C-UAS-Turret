@@ -5,6 +5,12 @@ network and fires a low-power laser lock-on indicator. Semester 1: ground-based
 turret detecting and tracking drones; semester 2: mount the system on a drone
 platform.
 
+**New here? Read [`HANDOFF.md`](HANDOFF.md) first** — a running session-by-session
+log of what has been done, what it means, and what to do next. It's the fastest
+way for a teammate (or a teammate's AI assistant) to get full context.
+
+The vision/detection half has its own guide: [`vision/README.md`](vision/README.md).
+
 Docs (in `docs/`):
 - `project-reqs.md` — what the project must do, hardware split, budget
 - `prototype-reqs.md` — checklists for Prototypes 1, 2 and 3
