@@ -8,6 +8,8 @@ venv/
 
 # Downloaded pretrained weights (auto-fetched by Ultralytics on first train)
 *.pt
+# ...but DO track our own trained models (small, and the real deliverable).
+!models/*.pt
 
 # Training / evaluation outputs
 experiments/runs/
