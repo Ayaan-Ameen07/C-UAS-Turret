@@ -1,0 +1,198 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "d39ae9f8-aed6-486a-8229-09e35eea6104")
+	(paper "A4")
+	(lib_symbols)
+	(sheet
+		(at 133.35 62.23)
+		(size 45.72 29.21)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "7a735f04-de03-4178-8b65-9c95c9031d87")
+		(property "Sheetname" "5V and Laser"
+			(at 133.35 61.5184 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "5v_laser.kicad_sch"
+			(at 133.35 92.0246 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "C-UAS-Turret"
+				(path "/d39ae9f8-aed6-486a-8229-09e35eea6104"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 73.66 62.23)
+		(size 48.26 29.21)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "9e346d4f-772d-48f6-91b2-05f62939bfbf")
+		(property "Sheetname" "Power Input"
+			(at 73.66 61.5184 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power_input.kicad_sch"
+			(at 73.66 92.0246 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "C-UAS-Turret"
+				(path "/d39ae9f8-aed6-486a-8229-09e35eea6104"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 73.66 101.6)
+		(size 48.26 29.21)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "ab5fa5da-c863-491e-bac9-10e0acdac3d9")
+		(property "Sheetname" "Motors"
+			(at 73.66 100.8884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "motors.kicad_sch"
+			(at 73.66 131.3946 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "C-UAS-Turret"
+				(path "/d39ae9f8-aed6-486a-8229-09e35eea6104"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 135.89 101.6)
+		(size 45.72 27.94)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "e22153ab-ba15-4880-94fc-b62344b5fe77")
+		(property "Sheetname" "Nucleo"
+			(at 135.89 100.8884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "nucleo.kicad_sch"
+			(at 135.89 130.1246 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "C-UAS-Turret"
+				(path "/d39ae9f8-aed6-486a-8229-09e35eea6104"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

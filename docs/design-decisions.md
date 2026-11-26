@@ -47,7 +47,7 @@ Prototype 1 stays in the finished turret.
 
 ## Decision 1: The motor brain is an STM32 on a Nucleo (not an ESP32)
 
-**Updated Oct 29:** Prototype 1 runs on the **Nucleo-144 STM32F746ZG** that I
+**Updated Oct 29:** Prototype 1 runs on the **Nucleo-144 STM32F767ZI** that I
 borrowed from the Purdue ECE shop (a loan: it goes back). The **NUCLEO-G474RE**
 below is now only an optional buy, in case the shop wants its board back before
 Dec 12. The code is Arduino-style or ST's own tools, so it carries over between
@@ -554,6 +554,20 @@ choice to block the whole board. Both options use the same pins.
 
 ---
 
+## Decision 14: PCB schematic choices (decided Nov 10-11)
+
+| Choice | What I picked | Why I chose it |
+|---|---|---|
+| Layers and fab | 2 layers, 1 oz, JLCPCB | Cheap and fast. Bottom layer is one big ground sheet to keep motor noise down. |
+| 12 V adapter | 12 V, 8 A or more, 5.5 x 2.5 mm plug | My worst case is 5.62 A (7.0 A with margin). A 5 A adapter is not enough. See `pcb-calculations.md`. |
+| Barrel jack | 5.5 x 2.5 mm, rated 8 A | Most 5.5 x 2.1 mm jacks are only 6 A, below my 7.5 A fuse. |
+| Fuse | 7.5 A blade fuse in a PCB blade holder | Above my 5.62 A load / 0.8, below the 8 A jack. Replaces the old "15 A final" plan. |
+| TVS | SMCJ15CA (two-way) | Same specs as SMCJ15A, and it cannot be soldered backwards. |
+| 5 V to the Pi | GPIO pins (2 x 5 V, 2 x GND) with a ferrite bead, caps and a 5 V TVS (SMAJ5.0CA) | One less cable in the electronics bay. The TVS replaces the protection the Pi skips on GPIO power. Needs `usb_max_current_enable=1`. Never plug USB-C power in at the same time. |
+| Nucleo mounting | Sockets on Zio CN7 and CN10, plus 2 standoffs on the free side | Just as steady as extra sockets, cheaper, nothing to misalign. |
+| Raspberry Pi | **Pi 5 4GB** to start (borrow from the ECE shop if they have one, else buy). Updated Nov 12 | I train on my laptop; the Pi only runs a small YOLO-nano model, which fits in 4GB. 8GB is $175 after the Nov 2026 price hike. I can upgrade later. |
+| Nucleo pins | STEP1 D6/PE9 (TIM1_CH1), DIR1 D7/PF13, EN1 D4/PF14, STEP2 D9/PD15 (TIM4_CH4), DIR2 D8/PF12, EN2 D10/PD14, LASER_CTRL D3/PE13 | STEP pins on two different timers so each motor runs its own speed. Pins from ST UM1974 (F767ZI table). |
+
 ## Still open (not decided)
 
 1. **5 V module for the Pi:** Pololu vs AliExpress (the sealed Amazon USB-C module
@@ -574,7 +588,7 @@ choice to block the whole board. Both options use the same pins.
 6. **Friend's funding and role.** A friend may help fund the project in exchange
    for a resume credit. The role split and who keeps the hardware are not
    defined yet; agree on them so each person's resume claim is honest.
-7. **Overall budget.** The original ~$370 target is no longer binding. The BOM
+7. **Overall budget: about $500** (updated Nov 12, 2026; the original ~$370 target is retired). The BOM
    currently counts about **$540 without optional items** and about **$733 with
    the battery set and Coral**. Real prices will shift as we order.
 
